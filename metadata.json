@@ -1,0 +1,6 @@
+{
+  "name": "ForgePoint Industrial Hardware",
+  "description": "Precision contractor-grade hardware store featuring 3D scroll-driven mechanics, interactive exploded schematics, and enterprise order fulfillment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

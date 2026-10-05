@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Star, Check, SlidersHorizontal, Info, ShieldAlert } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { FALLBACK_PRODUCTS } from '../data/catalogFallback';
 
 interface CatalogSectionProps {
   onSelectProduct: (p: Product) => void;
@@ -9,8 +10,8 @@ interface CatalogSectionProps {
 
 export const CatalogSection: React.FC<CatalogSectionProps> = ({ onSelectProduct }) => {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
+  const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All Equipment');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('rating');
@@ -28,6 +29,29 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({ onSelectProduct 
     fetchProducts();
   }, [activeCategory, searchQuery, sortBy]);
 
+  const filterFallbackList = () => {
+    let list = [...FALLBACK_PRODUCTS];
+    if (activeCategory !== 'All Equipment') {
+      list = list.filter(p => p.category.toLowerCase() === activeCategory.toLowerCase());
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    }
+    if (sortBy === 'price-low') {
+      list.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      list.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'rating') {
+      list.sort((a, b) => b.rating - a.rating);
+    }
+    return list;
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -39,10 +63,13 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({ onSelectProduct 
       const res = await fetch(`/api/products?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setProducts(data.products || []);
+        setProducts(data.products || filterFallbackList());
+      } else {
+        setProducts(filterFallbackList());
       }
-    } catch (err) {
-      console.error('Failed to load products from server:', err);
+    } catch {
+      // Fallback for static environments like GitHub Pages
+      setProducts(filterFallbackList());
     } finally {
       setLoading(false);
     }
